@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dankbarkeits-App</title>
+    <meta name="description" content="Deine persönliche Dankbarkeits-App">
+    <meta name="theme-color" content="#667eea">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            min-height: calc(100vh - 20px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 10;
+            padding: 10px 0;
+            border-radius: 15px;
+        }
+
+        .title {
+            font-size: 2em;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-weight: 300;
+        }
+
+        .streak {
+            background: linear-gradient(45deg, #ff9a56, #ff6b6b);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .mode-toggle {
+            display: flex;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        .mode-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 1em;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .category-btn {
+            padding: 12px 8px;
+            border: 2px solid #e9ecef;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8em;
+            font-weight: 500;
+            position: relative;
+            text-align: center;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .category-btn:active {
+            transform: scale(0.95);
+        }
+
+        .category-btn.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+
+        .selection-counter {
+            background: #ff6b6b;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.7em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            font-weight: bold;
+        }
+
+        .journal-area {
+            width: 100%;
+            min-height: 100px;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            font-family: inherit;
+            font-size: 1em;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        .journal-area:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .save-btn {
+            flex: 1;
+            padding: 15px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:active {
+            transform: scale(0.98);
+        }
+
+        .save-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .clear-btn {
+            padding: 15px 20px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .entries {
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .entry {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            position: relative;
+        }
+
+        .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .entry-date {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+
+        .entry-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .edit-btn, .delete-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 0.8em;
+        }
+
+        .edit-btn {
+            color: #667eea;
+        }
+
+        .delete-btn {
+            color: #dc3545;
+        }
+
+        .entry-categories {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+
+        .entry-category {
+            background: #667eea;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7em;
+        }
+
+        .entry-text {
+            color: #2c3e50;
+            font-style: italic;
+            line-height: 1.4;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            padding: 30px 20px;
+        }
+
+        .counter-info {
+            font-size: 0.8em;
+            color: #6c757d;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        .install-prompt {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .install-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+                border-radius: 0;
+                min-height: 100vh;
+            }
+
+            .categories {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .category-btn {
+                font-size: 0.75em;
+                padding: 10px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="install-prompt" class="install-prompt" style="display: none;">
+            📱 Diese App kann auf deinem Handy installiert werden!
+            <br>
+            <button class="install-btn" id="install-btn">App installieren</button>
+        </div>
+
+        <div class="header">
+            <h1 class="title">🙏 Dankbarkeit</h1>
+            <div class="streak">Tag <span id="streak-count">1</span> 🔥</div>
+        </div>
+
+        <div class="mode-toggle">
+            <button class="mode-btn active" data-mode="quick">Quick-Modus</button>
+            <button class="mode-btn" data-mode="journal">Journal-Modus</button>
+        </div>
+
+        <div id="quick-mode">
+            <div class="section">
+                <h3 class="section-title">Wofür bist du heute dankbar?</h3>
+                <div class="categories">
+                    <button class="category-btn" data-category="Familie">👨‍👩‍👧‍👦 Familie</button>
+                    <button class="category-btn" data-category="Freunde">👥 Freunde</button>
+                    <button class="category-btn" data-category="Gesundheit">💚 Gesundheit</button>
+                    <button class="category-btn" data-category="Arbeit">💼 Arbeit</button>
+                    <button class="category-btn" data-category="Sport">🏃‍♂️ Sport/Training</button>
+                    <button class="category-btn" data-category="Natur">🌱 Natur</button>
+                    <button class="category-btn" data-category="Erfolge">🎯 Erfolge</button>
+                    <button class="category-btn" data-category="Kleine Momente">✨ Kleine Momente</button>
+                    <button class="category-btn" data-category="Essen">🍽️ Essen</button>
+                    <button class="category-btn" data-category="Zuhause">🏠 Zuhause</button>
+                </div>
+                <div class="counter-info">
+                    <span id="selection-count">0</span>/10 ausgewählt
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3 class="section-title">Zusätzliche Gedanken (optional)</h3>
+            <textarea 
+                class="journal-area" 
+                id="journal-text"
+                placeholder="Beschreibe, was dich heute besonders dankbar gemacht hat..."></textarea>
+        </div>
+
+        <div class="action-buttons">
+            <button class="save-btn" id="save-btn">Eintrag speichern 💫</button>
+            <button class="clear-btn" id="clear-btn">Zurücksetzen</button>
+        </div>
+
+        <div class="entries" id="entries-container">
+            <div class="empty-state">
+                Noch keine Einträge vorhanden. Erstelle deinen ersten Dankbarkeits-Moment! 🌟
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
