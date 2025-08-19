@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schichtplan-Wecker</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlNjaGljaHRwbGFuLVdlY2tlciIsCiAgInNob3J0X25hbWUiOiAiU2NoaWNodHdlY2tlciIsCiAgImRlc2NyaXB0aW9uIjogIldlY2tlci1BcHAgZsO8ciAyLVdvY2hlbi1TY2hpY2h0cGxhbiIsCiAgInN0YXJ0X3VybCI6ICIuLyIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgInRoZW1lX2NvbG9yIjogIiM0ZjQ2ZTUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNmZmZmZmYiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUIzYVdSMGFEMGlNVEk0SWlCb1pXbG5hSFE5SWpFeU9DSWdkbWxsZDBKdmVEMGlNQ0F3SURFME5DQXhORFFpSUdacGJHdzlJaU0wWmpRMlpUVWlQanhqYVhKamJHVWdZM2c5SWpjeUlpQmplVDBpTnpJaUlISTlJak0ySWlCbWFXeHNQU0pqZFhKeVpXNTBRMjlzYjNJaUx6NDhkR1Y0ZENCNFBTSTNNaUlnZVQwaU16SWlJSFJsZUhRdFlXNWphRzl5UFNKdGFXUmtiR1VpSUdacGJHdzlJaU0zWm1abVptWWlJR1p2Ym5RdGMybDZaVDBpTWpRaVBqQXpPRGc2TURBOEwzUmxlSFErUEM5emRtYysiLAogICAgICAic2l6ZXMiOiAiMTI4eDEyOCIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiCiAgICB9CiAgXQp9">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Schichtwecker">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+        
+        .current-time {
+            font-size: 32px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .week-info {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .install-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 20px;
+            padding: 8px 12px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            display: none;
+        }
+        
+        .settings-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        
+        .controls {
+            padding: 16px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: #cbd5e1;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .toggle-switch.active {
+            background: #10b981;
+        }
+        
+        .toggle-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+        
+        .toggle-switch.active .toggle-knob {
+            transform: translateX(26px);
+        }
+        
+        .test-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            margin-right: 12px;
+        }
+        
+        .test-btn.play {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .test-btn.stop {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .test-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .today-section {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #1f2937;
+        }
+        
+        .shift-card {
+            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+            border: 2px solid #3b82f6;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .shift-card.off-day {
+            background: #f3f4f6;
+            border: 2px solid #d1d5db;
+        }
+        
+        .shift-time {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 12px;
+        }
+        
+        .alarm-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .alarm-item {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .alarm-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        
+        .alarm-time {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            color: #4f46e5;
+        }
+        
+        .alarm-desc {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        
+        .week-schedule {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .day-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+        
+        .day-row.today {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+        }
+        
+        .day-name {
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .day-time {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        
+        .day-alarms {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #6b7280;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+        
+        .form-input, .form-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .volume-slider {
+            flex: 1;
+        }
+        
+        .info-box {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 16px 0;
+        }
+        
+        .info-box h4 {
+            color: #0c4a6e;
+            margin-bottom: 8px;
+        }
+        
+        .info-box ul {
+            color: #0369a1;
+            font-size: 14px;
+            margin-left: 16px;
+        }
+        
+        .free-day {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6b7280;
+        }
+        
+        .free-day .emoji {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .status-indicator {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #10b981;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 1001;
+            display: none;
+        }
+        
+        .status-indicator.error {
+            background: #ef4444;
+        }
+        
+        .permissions-panel {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 16px 0;
+            display: none;
+        }
+        
+        .permissions-panel h4 {
+            color: #92400e;
+            margin-bottom: 8px;
+        }
+        
+        .permissions-panel button {
+            background: #f59e0b;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="status-indicator" id="statusIndicator"></div>
+    
+    <div class="container">
+        <div class="header">
+            <button class="settings-btn" onclick="openSettings()">⚙️</button>
+            <button class="install-btn" id="installBtn" onclick="installApp()">📱 Installieren</button>
+            <h1>⏰ Schichtplan-Wecker</h1>
+            <div class="current-time" id="currentTime">00:00:00</div>
+            <div class="week-info" id="weekInfo">Gerade Woche</div>
+        </div>
+        
+        <div class="permissions-panel" id="permissionsPanel">
+            <h4>🔔 Benachrichtigungen aktivieren</h4>
+            <p style="font-size: 14px; color: #92400e; margin-bottom: 8px;">
+                Für zuverlässige Wecker sind Benachrichtigungen erforderlich.
+            </p>
+            <button onclick="requestAllPermissions()">Berechtigungen aktivieren</button>
+        </div>
+        
+        <div class="controls">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span id="alarmIcon">🔔</span>
+                <span style="font-weight: 500;">Wecker</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button class="test-btn play" id="testBtn" onclick="testAlarm()">🔊 Test</button>
+                <div class="toggle-switch active" id="alarmToggle" onclick="toggleAlarms()">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="today-section">
+            <h3 class="section-title">Heute (<span id="todayName">Montag</span>)</h3>
+            <div id="todayContent">
+                <!-- Today's content will be inserted here -->
+            </div>
+        </div>
+        
+        <div class="week-schedule">
+            <h3 class="section-title">Diese Woche (<span id="currentWeekLabel">Gerade</span>)</h3>
+            <div id="currentWeekSchedule">
+                <!-- Current week schedule will be inserted here -->
+            </div>
+        </div>
+        
+        <div class="week-schedule">
+            <h3 class="section-title">Nächste Woche (<span id="nextWeekLabel">Ungerade</span>)</h3>
+            <div id="nextWeekSchedule">
+                <!-- Next week schedule will be inserted here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚙️ Einstellungen</h3>
+                <button class="close-btn" onclick="closeSettings()">&times;</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Referenzdatum (Beginn einer geraden Woche):</label>
+                <input type="date" class="form-input" id="startDate">
+                <small style="color: #6b7280;">Wählen Sie ein Datum aus einer geraden Woche</small>
+            </div>
+            
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 16px;">
+                <h4 style="margin-bottom: 16px;">🔊 Weckton-Einstellungen</h4>
+                
+                <div class="form-group">
+                    <label class="form-label">Klingelton:</label>
+                    <select class="form-select" id="alarmSound">
+                        <option value="beep">Standard Beep</option>
+                        <option value="classic">Klassischer Wecker</option>
+                        <option value="gentle">Sanft</option>
+                        <option value="urgent">Dringend</option>
+                        <option value="chimes">Glocken</option>
+                        <option value="digital">Digital</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Lautstärke: <span id="volumeDisplay">70%</span></label>
+                    <div class="volume-container">
+                        <input type="range" min="10" max="100" value="70" class="volume-slider" id="volumeSlider">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label class="form-label" style="margin: 0;">Vibration (falls unterstützt)</label>
+                        <div class="toggle-switch active" id="vibrationToggle" onclick="toggleVibration()">
+                            <div class="toggle-knob"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="test-btn play" style="width: 100%; margin: 16px 0;" onclick="testAlarmFromSettings()">
+                    🔊 Klingelton testen
+                </button>
+            </div>
+            
+            <div class="info-box">
+                <h4>Wecker-Zeiten:</h4>
+                <ul>
+                    <li>🔔 1. Wecker: 1 Stunde vor Dienstbeginn</li>
+                    <li>🔔 2. Wecker: 50 Minuten vor Dienstbeginn</li>
+                    <li>⏰ Weckdauer: 10 Sekunden</li>
+                </ul>
+            </div>
+            
+            <div class="info-box">
+                <h4>📱 Web-App Features:</h4>
+                <ul>
+                    <li>✅ Funktioniert offline</li>
+                    <li>✅ Auf Homescreen installierbar</li>
+                    <li>✅ Push-Benachrichtigungen</li>
+                    <li>✅ Hintergrund-Wecker</li>
+                </ul>
+            </div>
+            
+            <button style="width: 100%; padding: 12px; background: #4f46e5; color: white; border: none; border-radius: 6px; cursor: pointer;" onclick="closeSettings()">
+                Schließen
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register(createServiceWorker())
+                .then(registration => {
+                    console.log('SW registered:', registration);
+                    showStatus('Web-App bereit!', 'success');
+                })
+                .catch(error => {
+                    console.log('SW registration failed:', error);
+                    showStatus('Offline-Modus nicht verfügbar', 'error');
+                });
+        }
+        
+        function createServiceWorker() {
+            const swCode = `
+                const CACHE_NAME = 'shift-alarm-v1';
+                const urlsToCache = ['/'];
+                
+                self.addEventListener('install', event => {
+                    event.waitUntil(
+                        caches.open(CACHE_NAME)
+                            .then(cache => cache.addAll(urlsToCache))
+                    );
+                });
+                
+                self.addEventListener('fetch', event => {
+                    event.respondWith(
+                        caches.match(event.request)
+                            .then(response => response || fetch(event.request))
+                    );
+                });
+                
+                self.addEventListener('notificationclick', event => {
+                    event.notification.close();
+                    event.waitUntil(
+                        clients.openWindow('/')
+                    );
+                });
+            `;
+            
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            return URL.createObjectURL(blob);
+        }
+        
+        // PWA Install
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBtn').style.display = 'block';
+        });
+        
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        showStatus('App wird installiert...', 'success');
+                    }
+                    deferredPrompt = null;
+                    document.getElementById('installBtn').style.display = 'none';
+                });
+            }
+        }
+        
+        // App state
+        let state = {
+            alarmsEnabled: true,
+            alarmSound: 'beep',
+            alarmVolume: 70,
+            vibrationEnabled: true,
+            startDate: new Date().toISOString().split('T')[0],
+            isPlaying: false,
+            audioContext: null,
+            alarmInterval: null
+        };
+        
+        // Schichtplan
+        const shiftSchedule = {
+            ungerade: {
+                monday: '08:15',
+                tuesday: '08:15', 
+                wednesday: '08:15',
+                thursday: '07:30',
+                friday: '08:00',
+                saturday: null,
+                sunday: null
+            },
+            gerade: {
+                monday: '07:15',
+                tuesday: '07:30',
+                wednesday: '08:00', 
+                thursday: '08:00',
+                friday: '07:30',
+                saturday: null,
+                sunday: null
+            }
+        };
+        
+        const weekDays = [
+            { key: 'monday', label: 'Montag', short: 'Mo' },
+            { key: 'tuesday', label: 'Dienstag', short: 'Di' },
+            { key: 'wednesday', label: 'Mittwoch', short: 'Mi' },
+            { key: 'thursday', label: 'Donnerstag', short: 'Do' },
+            { key: 'friday', label: 'Freitag', short: 'Fr' },
+            { key: 'saturday', label: 'Samstag', short: 'Sa' },
+            { key: 'sunday', label: 'Sonntag', short: 'So' }
+        ];
+        
+        const alarmSounds = {
+            beep: { name: 'Standard Beep', freq: [800, 1000] },
+            classic: { name: 'Klassischer Wecker', freq: [440, 880] },
+            gentle: { name: 'Sanft', freq: [523, 659] },
+            urgent: { name: 'Dringend', freq: [1200, 1600] },
+            chimes: { name: 'Glocken', freq: [523, 659, 784] },
+            digital: { name: 'Digital', freq: [1000] }
+        };
+        
+        // Status display
+        function showStatus(message, type = 'success') {
+            const indicator = document.getElementById('statusIndicator');
+            indicator.textContent = message;
+            indicator.className = `status-indicator ${type === 'error' ? 'error' : ''}`;
+            indicator.style.display = 'block';
+            
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Permissions
+        async function requestAllPermissions() {
+            try {
+                // Notification permission
+                if ('Notification' in window) {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        showStatus('Benachrichtigungen aktiviert!', 'success');
+                    } else {
+                        showStatus('Benachrichtigungen abgelehnt', 'error');
+                    }
+                }
+                
+                // Wake lock permission (if supported)
+                if ('wakeLock' in navigator) {
+                    try {
+                        await navigator.wakeLock.request('screen');
+                        showStatus('Bildschirm-Wakelock aktiviert', 'success');
+                    } catch (err) {
+                        console.log('Wake lock failed:', err);
+                    }
+                }
+                
+                checkPermissions();
+            } catch (error) {
+                showStatus('Fehler bei Berechtigungen', 'error');
+            }
+        }
+        
+        function checkPermissions() {
+            const panel = document.getElementById('permissionsPanel');
+            const notificationPermission = Notification.permission;
+            
+            if (notificationPermission !== 'granted') {
+                panel.style.display = 'block';
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+        
+        // Initialize audio context with user interaction
+        function initAudio() {
+            if (!state.audioContext) {
+                try {
+                    state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    // Resume context if suspended
+                    if (state.audioContext.state === 'suspended') {
+                        state.audioContext.resume();
+                    }
+                } catch (error) {
+                    console.error('Audio context failed:', error);
+                    showStatus('Audio nicht verfügbar', 'error');
+                }
+            }
+        }
+        
+        // Calculate current week type
+        function getCurrentWeekType() {
+            const start = new Date(state.startDate);
+            const now = new Date();
+            const diffTime = Math.abs(now - start);
+            const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+            return diffWeeks % 2 === 0 ? 'gerade' : 'ungerade';
+        }
+        
+        // Get current day name
+        function getCurrentDayName() {
+            const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            return days[new Date().getDay()];
+        }
+        
+        // Calculate alarm times
+        function calculateAlarmTimes(shiftStart) {
+            if (!shiftStart) return null;
+            
+            const [hours, minutes] = shiftStart.split(':').map(Number);
+            const shiftStartMinutes = hours * 60 + minutes;
+            
+            const alarm1Minutes = shiftStartMinutes - 60;
+            const alarm2Minutes = shiftStartMinutes - 50;
+            
+            function formatTime(totalMinutes) {
+                let h = Math.floor(totalMinutes / 60);
+                let m = totalMinutes % 60;
+                
+                if (totalMinutes < 0) {
+                    h = Math.floor((totalMinutes + 24 * 60) / 60);
+                    m = (totalMinutes + 24 * 60) % 60;
+                }
+                
+                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+            }
+            
+            return {
+                alarm1: formatTime(alarm1Minutes),
+                alarm2: formatTime(alarm2Minutes),
+                shiftStart: shiftStart
+            };
+        }
+        
+        // Enhanced audio generation
+        function playAlarmSound(duration = 3000) {
+            if (!state.audioContext || state.isPlaying) return;
+            
+            initAudio();
+            state.isPlaying = true;
+            
+            const soundConfig = alarmSounds[state.alarmSound];
+            const volume = state.alarmVolume / 100;
+            
+            // Vibration
+            if (state.vibrationEnabled && navigator.vibrate) {
+                navigator.vibrate([300, 100, 300, 100, 300]);
+            }
+            
+            function playTone() {
+                if (!state.audioContext) return;
+                
+                soundConfig.freq.forEach((frequency, index) => {
+                    const oscillator = state.audioContext.createOscillator();
+                    const gainNode = state.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(state.audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(frequency, state.audioContext.currentTime);
+                    oscillator.type = state.alarmSound === 'digital' ? 'square' : 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0, state.audioContext.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(volume * 0.4, state.audioContext.currentTime + 0.1);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, state.audioContext.currentTime + 0.9);
+                    
+                    oscillator.start(state.audioContext.currentTime + index * 0.1);
+                    oscillator.stop(state.audioContext.currentTime + 0.9 + index * 0.1);
+                });
+            }
+            
+            playTone();
+            
+            let repeatCount = 0;
+            const maxRepeats = Math.floor(duration / 1000);
+            
+            state.alarmInterval = setInterval(() => {
+                repeatCount++;
+                if (repeatCount >= maxRepeats) {
+                    stopAlarmSound();
+                    return;
+                }
+                playTone();
+            }, 1000);
+            
+            updateTestButton();
+        }
+        
+        // Stop alarm sound
+        function stopAlarmSound() {
+            if (state.alarmInterval) {
+                clearInterval(state.alarmInterval);
+                state.alarmInterval = null;
+            }
+            state.isPlaying = false;
+            updateTestButton();
+        }
+        
+        // Enhanced alarm trigger with persistent notification
+        async function triggerAlarm(title, message) {
+            playAlarmSound(15000); // 15 seconds
+            
+            // Service Worker notification for persistence
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                try {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'SHOW_NOTIFICATION',
+                        title: title,
+                        message: message
+                    });
+                } catch (error) {
+                    console.error('SW notification failed:', error);
+                }
+            }
+            
+            // Fallback notification
+            if ('Notification' in window && Notification.permission === 'granted') {
+                const notification = new Notification(title, {
+                    body: message,
+                    requireInteraction: true,
+                    persistent: true,
+                    actions: [
+                        { action: 'stop', title: 'Stoppen' },
+                        { action: 'snooze', title: '5 Min' }
+                    ]
+                });
+                
+                notification.onclick = () => {
+                    stopAlarmSound();
+                    notification.close();
+                };
+                
+                setTimeout(() => notification.close(), 30000);
+            }
+            
+            // Alert as final fallback
+            setTimeout(() => {
+                if (state.isPlaying && confirm(`🔔 ${title}\n${message}\n\nWecker stoppen?`)) {
+                    stopAlarmSound();
+                }
+            }, 2000);
+            
+            showStatus(`Wecker: ${title}`, 'success');
+        }
+        
+        // Test alarm with user interaction
+        function testAlarm() {
+            if (state.isPlaying) {
+                stopAlarmSound();
+            } else {
+                // User gesture required for audio
+                initAudio();
+                playAlarmSound(5000);
+                showStatus('Wecker-Test läuft...', 'success');
+            }
+        }
+        
+        function testAlarmFromSettings() {
+            testAlarm();
+        }
+        
+        // Update test button
+        function updateTestButton() {
+            const btn = document.getElementById('testBtn');
+            if (state.isPlaying) {
+                btn.textContent = '⏹ Stopp';
+                btn.className = 'test-btn stop';
+            } else {
+                btn.textContent = '🔊 Test';
+                btn.className = 'test-btn play';
+            }
+        }
+        
+        // Check alarms with enhanced precision
+        function checkAlarms() {
+            if (!state.alarmsEnabled) return;
+            
+            const currentWeek = getCurrentWeekType();
+            const currentDay = getCurrentDayName();
+            const shiftStart = shiftSchedule[currentWeek][currentDay];
+            
+            if (!shiftStart) return;
+            
+            const todayShift = calculateAlarmTimes(shiftStart);
+            const now = new Date();
+            const currentTimeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            if (currentTimeStr === todayShift.alarm1 && now.getSeconds() < 2) {
+                triggerAlarm("⏰ Aufstehen!", "Dienstbeginn in 1 Stunde");
+            } else if (currentTimeStr === todayShift.alarm2 && now.getSeconds() < 2) {
+                triggerAlarm("🚀 Fertig machen!", "Dienstbeginn in 50 Minuten");
+            }
+        }
+        
+        // Toggle functions
+        function toggleAlarms() {
+            state.alarmsEnabled = !state.alarmsEnabled;
+            updateAlarmToggle();
+            saveSettings();
+            showStatus(state.alarmsEnabled ? 'Wecker aktiviert' : 'Wecker deaktiviert', 'success');
+        }
+        
+        function updateAlarmToggle() {
+            const toggle = document.getElementById('alarmToggle');
+            const icon = document.getElementById('alarmIcon');
+            
+            if (state.alarmsEnabled) {
+                toggle.classList.add('active');
+                icon.textContent = '🔔';
+            } else {
+                toggle.classList.remove('active');
+                icon.textContent = '🔕';
+            }
+        }
+        
+        function toggleVibration() {
+            state.vibrationEnabled = !state.vibrationEnabled;
+            updateVibrationToggle();
+            saveSettings();
+        }
+        
+        function updateVibrationToggle() {
+            const toggle = document.getElementById('vibrationToggle');
+            if (state.vibrationEnabled) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+            }
+        }
+        
+        // Update display (same as before)
+        function updateDisplay() {
+            const now = new Date();
+            
+            // Update time
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('de-DE');
+            
+            // Update week info
+            const currentWeek = getCurrentWeekType();
+            const currentDay = getCurrentDayName();
+            document.getElementById('weekInfo').textContent = 
+                `${currentWeek === 'gerade' ? '📅 Gerade Woche' : '📋 Ungerade Woche'}`;
+            
+            // Update today section
+            updateTodaySection(currentWeek, currentDay);
+            updateWeekSchedules(currentWeek);
+        }
+        
+        function updateTodaySection(currentWeek, currentDay) {
+            const todayName = weekDays.find(d => d.key === currentDay)?.label || 'Heute';
+            document.getElementById('todayName').textContent = todayName;
+            
+            const shiftStart = shiftSchedule[currentWeek][currentDay];
+            const content = document.getElementById('todayContent');
+            
+            if (!shiftStart) {
+                content.innerHTML = `
+                    <div class="free-day">
+                        <div class="emoji">🎉</div>
+                        <p>Heute ist arbeitsfrei!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const alarms = calculateAlarmTimes(shiftStart);
+            content.innerHTML = `
+                <div class="shift-card">
+                    <div class="shift-time">Dienstbeginn: ${shiftStart} Uhr</div>
+                    <div class="alarm-grid">
+                        <div class="alarm-item">
+                            <div class="alarm-label">1. Wecker</div>
+                            <div class="alarm-time">${alarms.alarm1}</div>
+                            <div class="alarm-desc">Aufstehen</div>
+                        </div>
+                        <div class="alarm-item">
+                            <div class="alarm-label">2. Wecker</div>
+                            <div class="alarm-time">${alarms.alarm2}</div>
+                            <div class="alarm-desc">Fertig machen</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function updateWeekSchedules(currentWeek) {
+            const nextWeek = currentWeek === 'gerade' ? 'ungerade' : 'gerade';
+            const currentDay = getCurrentDayName();
+            
+            document.getElementById('currentWeekLabel').textContent = 
+                currentWeek === 'gerade' ? 'Gerade' : 'Ungerade';
+            document.getElementById('nextWeekLabel').textContent = 
+                nextWeek === 'gerade' ? 'Gerade' : 'Ungerade';
+            
+            // Current week
+            const currentWeekHtml = weekDays.slice(0, 5).map(day => {
+                const shiftTime = shiftSchedule[currentWeek][day.key];
+                const alarms = shiftTime ? calculateAlarmTimes(shiftTime) : null;
+                const isToday = day.key === currentDay;
+                
+                return `
+                    <div class="day-row ${isToday ? 'today' : ''}">
+                        <span class="day-name">${day.short}</span>
+                        <div style="text-align: right;">
+                            ${shiftTime ? `
+                                <div class="day-time">${shiftTime}</div>
+                                <div class="day-alarms">🔔 ${alarms.alarm1} • ${alarms.alarm2}</div>
+                            ` : '<span style="color: #9ca3af;">frei</span>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Next week
+            const nextWeekHtml = weekDays.slice(0, 5).map(day => {
+                const shiftTime = shiftSchedule[nextWeek][day.key];
+                const alarms = shiftTime ? calculateAlarmTimes(shiftTime) : null;
+                
+                return `
+                    <div class="day-row">
+                        <span class="day-name">${day.short}</span>
+                        <div style="text-align: right;">
+                            ${shiftTime ? `
+                                <div class="day-time">${shiftTime}</div>
+                                <div class="day-alarms">🔔 ${alarms.alarm1} • ${alarms.alarm2}</div>
+                            ` : '<span style="color: #9ca3af;">frei</span>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('currentWeekSchedule').innerHTML = currentWeekHtml;
+            document.getElementById('nextWeekSchedule').innerHTML = nextWeekHtml;
+        }
+        
+        // Settings functions
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('show');
+            loadSettingsToForm();
+        }
+        
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('show');
+            saveSettings();
+        }
+        
+        function loadSettingsToForm() {
+            document.getElementById('startDate').value = state.startDate;
+            document.getElementById('alarmSound').value = state.alarmSound;
+            document.getElementById('volumeSlider').value = state.alarmVolume;
+            document.getElementById('volumeDisplay').textContent = state.alarmVolume + '%';
+            updateVibrationToggle();
+        }
+        
+        // Event listeners
+        document.getElementById('startDate').addEventListener('change', (e) => {
+            state.startDate = e.target.value;
+            updateDisplay();
+        });
+        
+        document.getElementById('alarmSound').addEventListener('change', (e) => {
+            state.alarmSound = e.target.value;
+        });
+        
+        document.getElementById('volumeSlider').addEventListener('input', (e) => {
+            state.alarmVolume = parseInt(e.target.value);
+            document.getElementById('volumeDisplay').textContent = state.alarmVolume + '%';
+        });
+        
+        // Local storage with enhanced error handling
+        function saveSettings() {
+            try {
+                localStorage.setItem('shiftAlarmSettings', JSON.stringify({
+                    alarmsEnabled: state.alarmsEnabled,
+                    alarmSound: state.alarmSound,
+                    alarmVolume: state.alarmVolume,
+                    vibrationEnabled: state.vibrationEnabled,
+                    startDate: state.startDate
+                }));
+            } catch (error) {
+                console.error('Save failed:', error);
+                showStatus('Einstellungen konnten nicht gespeichert werden', 'error');
+            }
+        }
+        
+        function loadSettings() {
+            try {
+                const saved = localStorage.getItem('shiftAlarmSettings');
+                if (saved) {
+                    const settings = JSON.parse(saved);
+                    state = { ...state, ...settings };
+                    updateAlarmToggle();
+                    updateVibrationToggle();
+                }
+            } catch (error) {
+                console.error('Load failed:', error);
+                showStatus('Einstellungen konnten nicht geladen werden', 'error');
+            }
+        }
+        
+        // Initialize app with enhanced startup
+        function init() {
+            loadSettings();
+            updateDisplay();
+            checkPermissions();
+            
+            // Initialize audio context on first user interaction
+            document.addEventListener('click', initAudio, { once: true });
+            document.addEventListener('touchstart', initAudio, { once: true });
+            
+            // Update time every second with alarm check
+            setInterval(() => {
+                updateDisplay();
+                checkAlarms();
+            }, 1000);
+            
+            showStatus('Web-App geladen!', 'success');
+        }
+        
+        // Start app when page loads
+        document.addEventListener('DOMContentLoaded', init);
+        
+        // Handle visibility change for background operation
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                console.log('App in background');
+            } else {
+                console.log('App in foreground');
+                updateDisplay();
+            }
+        });
+        
+        // Handle app install
+        window.addEventListener('appinstalled', () => {
+            showStatus('App erfolgreich installiert!', 'success');
+            document.getElementById('installBtn').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
