@@ -430,6 +430,30 @@
             </div>
         </div>
         
+        <!-- Test Alarm Section -->
+        <div class="today-section" style="background: #fef3c7; border-bottom: 2px solid #f59e0b;">
+            <h3 class="section-title" style="color: #92400e;">🧪 Test-Wecker (Temporär)</h3>
+            <div id="testAlarmSection">
+                <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;">
+                    <input type="time" id="testAlarmTime" style="padding: 8px; border: 1px solid #f59e0b; border-radius: 6px; font-family: monospace;">
+                    <button onclick="setTestAlarm()" style="background: #f59e0b; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                        ⏰ Test-Wecker setzen
+                    </button>
+                    <button onclick="clearTestAlarm()" style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                        🗑️ Löschen
+                    </button>
+                </div>
+                <div id="testAlarmDisplay" style="display: none; background: #fbbf24; color: #92400e; padding: 12px; border-radius: 8px; font-weight: bold;">
+                    <!-- Test alarm info will be shown here -->
+                </div>
+                <div style="background: #fed7aa; border: 1px solid #fb923c; border-radius: 6px; padding: 8px; margin-top: 8px;">
+                    <p style="font-size: 14px; color: #9a3412; margin: 0;">
+                        💡 <strong>Hinweis:</strong> Stellen Sie eine Zeit in den nächsten 1-2 Minuten ein, um die Wecker-Funktion zu testen.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
         <div class="today-section">
             <h3 class="section-title">Heute (<span id="todayName">Montag</span>)</h3>
             <div id="todayContent">
@@ -603,7 +627,8 @@
             startDate: new Date().toISOString().split('T')[0],
             isPlaying: false,
             audioContext: null,
-            alarmInterval: null
+            alarmInterval: null,
+            testAlarm: null // For temporary test alarm
         };
         
         // Schichtplan
@@ -899,8 +924,89 @@
             }
         }
         
-        // Check alarms with enhanced precision
-        function checkAlarms() {
+        // Test alarm functions
+        function setTestAlarm() {
+            const timeInput = document.getElementById('testAlarmTime');
+            const time = timeInput.value;
+            
+            if (!time) {
+                alert('Bitte wählen Sie eine Uhrzeit aus!');
+                return;
+            }
+            
+            // Set current time + 1 minute as default if no time is set
+            if (!timeInput.value) {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() + 1);
+                const timeStr = now.toTimeString().slice(0, 5);
+                timeInput.value = timeStr;
+                return setTestAlarm();
+            }
+            
+            state.testAlarm = {
+                time: time,
+                active: true,
+                set: new Date()
+            };
+            
+            updateTestAlarmDisplay();
+            showStatus(`Test-Wecker für ${time} gesetzt!`, 'success');
+            saveSettings();
+        }
+        
+        function clearTestAlarm() {
+            state.testAlarm = null;
+            updateTestAlarmDisplay();
+            document.getElementById('testAlarmTime').value = '';
+            showStatus('Test-Wecker gelöscht', 'success');
+            saveSettings();
+        }
+        
+        function updateTestAlarmDisplay() {
+            const display = document.getElementById('testAlarmDisplay');
+            
+            if (state.testAlarm && state.testAlarm.active) {
+                const now = new Date();
+                const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                
+                display.style.display = 'block';
+                display.innerHTML = `
+                    ⏰ <strong>Test-Wecker aktiv:</strong> ${state.testAlarm.time} Uhr<br>
+                    🕐 <strong>Aktuelle Zeit:</strong> ${currentTime}<br>
+                    ⚡ <strong>Status:</strong> Wartet auf Alarm...
+                `;
+            } else {
+                display.style.display = 'none';
+            }
+        }
+        
+        function checkTestAlarm() {
+            if (!state.testAlarm || !state.testAlarm.active || !state.alarmsEnabled) return;
+            
+            const now = new Date();
+            const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            if (currentTime === state.testAlarm.time && now.getSeconds() < 2) {
+                triggerAlarm("🧪 TEST-WECKER!", `Test erfolgreich um ${currentTime} Uhr`);
+                
+                // Auto-clear test alarm after triggering
+                setTimeout(() => {
+                    clearTestAlarm();
+                    showStatus('Test-Wecker automatisch gelöscht', 'success');
+                }, 2000);
+            }
+        }
+        
+        // Set current time + 1 minute as default
+        function setDefaultTestTime() {
+            const timeInput = document.getElementById('testAlarmTime');
+            if (!timeInput.value) {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() + 1);
+                const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                timeInput.value = timeStr;
+            }
+        }
             if (!state.alarmsEnabled) return;
             
             const currentWeek = getCurrentWeekType();
@@ -972,6 +1078,9 @@
             // Update today section
             updateTodaySection(currentWeek, currentDay);
             updateWeekSchedules(currentWeek);
+            
+            // Update test alarm display
+            updateTestAlarmDisplay();
         }
         
         function updateTodaySection(currentWeek, currentDay) {
@@ -1103,7 +1212,8 @@
                     alarmSound: state.alarmSound,
                     alarmVolume: state.alarmVolume,
                     vibrationEnabled: state.vibrationEnabled,
-                    startDate: state.startDate
+                    startDate: state.startDate,
+                    testAlarm: state.testAlarm
                 }));
             } catch (error) {
                 console.error('Save failed:', error);
@@ -1119,6 +1229,17 @@
                     state = { ...state, ...settings };
                     updateAlarmToggle();
                     updateVibrationToggle();
+                    
+                    // Clear test alarm if it's from a previous session
+                    if (state.testAlarm) {
+                        const now = new Date();
+                        const alarmSet = new Date(state.testAlarm.set);
+                        const hoursDiff = (now - alarmSet) / (1000 * 60 * 60);
+                        
+                        if (hoursDiff > 1) { // Clear test alarms older than 1 hour
+                            state.testAlarm = null;
+                        }
+                    }
                 }
             } catch (error) {
                 console.error('Load failed:', error);
@@ -1131,6 +1252,7 @@
             loadSettings();
             updateDisplay();
             checkPermissions();
+            setDefaultTestTime(); // Set default test time
             
             // Initialize audio context on first user interaction
             document.addEventListener('click', initAudio, { once: true });
